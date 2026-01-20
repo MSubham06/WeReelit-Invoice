@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice | WeReelit</title>
+    <title>Invoice Generator - WeReelit</title>
+    
+    <link rel="icon" type="image/png" href="assets/WeReelit Fav Logo.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -32,207 +35,512 @@
         }
     </script>
     <style>
-        @page {
-            size: A4;
-            margin: 0;
-        }
-
+        /* PDF/Print Specifics */
+        @page { size: A4; margin: 0; }
         @media print {
-            html, body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden;
+            body * { visibility: hidden; }
+            #invoice-capture, #invoice-capture * { visibility: visible; }
+            #invoice-capture { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 210mm; 
+                height: 297mm; 
+                margin: 0; 
+                transform: none !important;
             }
-
-            body {
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
             .no-print { display: none !important; }
-            
-            .footer-section {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-            }
         }
 
-        body {
-            background-color: #525252;
+        /* Screen Layout */
+        body { background-color: #1a1a1a; overflow: hidden; }
+        
+        .main-layout {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Left Sidebar (Form) */
+        .sidebar {
+            width: 420px;
+            background: #262626;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+            color: #e5e5e5;
+            flex-shrink: 0;
+            padding-bottom: 4rem;
+        }
+
+        /* Right Content (Preview) */
+        .preview-area {
+            flex-grow: 1;
+            background: #525252;
             display: flex;
             justify-content: center;
-            padding-top: 2rem;
-            padding-bottom: 2rem;
+            overflow-y: auto;
+            padding: 2rem;
         }
 
+        /* The A4 Paper */
         .a4-container {
             width: 210mm;
-            height: 297mm;
+            min-height: 297mm;
             background: white;
             position: relative;
-            margin: 0 auto;
-            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            transform-origin: top center;
         }
 
-        .editable:focus {
-            outline: 2px solid #72CFA6;
-            background: #f0fdf4;
-            border-radius: 2px;
-            padding: 0 2px;
+        /* Form Styling */
+        .form-group { margin-bottom: 0.75rem; }
+        .form-label { display: block; font-size: 0.7rem; color: #a3a3a3; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase; }
+        .form-input { 
+            width: 100%; 
+            background: #333; 
+            border: 1px solid #404040; 
+            color: white; 
+            padding: 0.5rem; 
+            border-radius: 4px; 
+            font-size: 0.85rem;
         }
+        .form-input:focus { border-color: #72CFA6; outline: none; }
+        
+        /* Select Dropdown specific styling */
+        select.form-input {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a3a3a3' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        .section-title {
+            color: #72CFA6;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid #404040;
+            padding-bottom: 0.25rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #404040; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #72CFA6; }
     </style>
 </head>
-<body class="font-sans text-brand-black">
+<body class="font-sans">
 
-    <div id="invoice-capture" class="a4-container bg-brand-white shadow-xl print:shadow-none">
+    <div class="main-layout">
         
-        <div class="px-8 pt-10">
+        <aside class="sidebar px-6 py-6">
+            <h2 class="text-xl font-bold text-white mb-1">Invoice Generator</h2>
+            <p class="text-xs text-brand-light mb-6">WeReelit Pricing & Plans</p>
+
+            <div class="form-group">
+                <label class="form-label text-brand-light">Invoice Mode</label>
+                <select id="inp-mode" oninput="updateInvoice()" class="form-input bg-brand-darker border-brand-main font-bold text-brand-light">
+                    <option value="final">Final Payment (Balance Due)</option>
+                    <option value="advance">Advance Payment (Initial)</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="form-group">
+                    <label class="form-label">Invoice #</label>
+                    <input type="text" id="inp-no" class="form-input" value="001" oninput="updateInvoice()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" id="inp-date" class="form-input" oninput="updateInvoice()">
+                </div>
+            </div>
+
+            <div class="section-title">Client Details</div>
+            <div class="form-group">
+                <label class="form-label">Client Name</label>
+                <input type="text" id="inp-client-name" class="form-input" placeholder="[Client Name]" oninput="updateInvoice()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Client Company</label>
+                <input type="text" id="inp-client-co" class="form-input" placeholder="[Client Company]" oninput="updateInvoice()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contact</label>
+                <input type="text" id="inp-client-contact" class="form-input" placeholder="[Client Email/Phone]" oninput="updateInvoice()">
+            </div>
+
+            <div class="section-title">Project Details</div>
+            <div class="form-group">
+                <label class="form-label">Video Style</label>
+                <select id="inp-style" oninput="updateInvoice()" class="form-input">
+                    <option value="VoiceSync (Lip-Sync Dubbing)">VoiceSync (Lip-Sync Dubbing)</option>
+                    <option value="Podcast (Conversations & Clips)">Podcast (Conversations & Clips)</option>
+                    <option value="Informative (Knowledge Simplified)">Informative (Knowledge Simplified)</option>
+                    <option value="Animated (Motion Graphics)">Animated (Motion Graphics)</option>
+                    <option value="Story (Cinematic Visuals)">Story (Cinematic Visuals)</option>
+                    <option value="Custom Project">Custom Project</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Project Name</label>
+                <input type="text" id="inp-project" class="form-input" value="Social Media Content" oninput="updateInvoice()">
+            </div>
             
-            <div class="flex justify-between items-start border-b-2 border-brand-dark pb-4 mb-6">
-                <div>
-                    <h1 class="text-4xl font-bold text-brand-dark tracking-tighter">We<span class="text-brand-light">Reelit</span></h1>
-                    <p class="text-xs text-brand-main font-semibold tracking-wide mt-1">Professional Video Editing & Services</p>
+            <div class="form-group">
+                <label class="form-label text-brand-light">Select Package (Auto-Fills)</label>
+                <select id="inp-package" onchange="applyPackageDefaults()" class="form-input font-bold">
+                    <option value="Custom">Custom</option>
+                    <option value="Basic">Basic (₹800 | 20-30 Sec)</option>
+                    <option value="Simple">Simple (₹1000 | 30-40 Sec)</option>
+                    <option value="Intermediate" selected>Intermediate (₹1200 | 40-50 Sec)</option>
+                    <option value="Advance">Advance (₹1500 | 50s-1 Min)</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="form-group">
+                    <label class="form-label">Duration</label>
+                    <input type="text" id="inp-duration" class="form-input" value="40 - 50 Sec" oninput="updateInvoice()">
                 </div>
-                <div class="text-right">
-                    <h2 class="text-2xl font-bold text-gray-200 uppercase tracking-widest">Invoice</h2>
-                    <div class="text-sm text-brand-darker mt-1 flex flex-col items-end gap-1">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-brand-dark">Date:</span> 
-                            <span contenteditable="true" class="editable min-w-[80px] text-right">Oct 24, 2025</span>
-                        </div>
+                <div class="form-group">
+                    <label class="form-label">Revisions</label>
+                    <input type="text" id="inp-revisions" class="form-input" value="3 Corrections" oninput="updateInvoice()">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="form-group">
+                    <label class="form-label">Video Count</label>
+                    <input type="number" id="inp-vid-count" class="form-input" value="1" oninput="updateInvoice()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Rush / Add-on</label>
+                    <select id="inp-addon" oninput="updateInvoice()" class="form-input">
+                        <option value="N/A" selected>N/A</option>
+                        <option value="24hr Rush Delivery">24hr Rush Delivery</option>
+                        <option value="Source Files Included">Source Files Included</option>
+                        <option value="Subtitles / Captions">Subtitles / Captions</option>
+                        <option value="Thumbnail Design">Thumbnail Design</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">Financials</div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="form-group">
+                    <label class="form-label">Total Amount (₹)</label>
+                    <input type="number" id="inp-total" class="form-input text-brand-light font-bold" value="1200" oninput="updateInvoice()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Advance %</label>
+                    <input type="number" id="inp-adv-percent" class="form-input" value="30" oninput="updateInvoice()">
+                </div>
+            </div>
+            
+            <div class="section-title">Payment Info</div>
+            <div class="form-group">
+                <label class="form-label">Pay To Phone (Header)</label>
+                <input type="text" id="inp-payto-phone" class="form-input" value="+91 79089 13742" oninput="updateInvoice()">
+            </div>
+            <div class="form-group">
+                <label class="form-label">UPI ID</label>
+                <input type="text" id="inp-upi-id" class="form-input" value="9933264878@axl" oninput="updateInvoice()">
+            </div>
+
+            <div class="mt-8 flex flex-col gap-3">
+                <button onclick="downloadAsImage()" class="w-full bg-brand-main text-white py-3 rounded font-bold hover:bg-brand-light hover:text-brand-dark transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-image"></i> Save as Image
+                </button>
+                <button onclick="saveAsPDF()" class="w-full bg-gray-700 text-white py-3 rounded font-bold hover:bg-gray-600 transition-colors flex items-center justify-center gap-2">
+                    <i class="fas fa-file-pdf"></i> Save as PDF
+                </button>
+            </div>
+        </aside>
+
+        <main class="preview-area">
+            
+            <div id="invoice-capture" class="a4-container">
+                
+                <div class="px-8 pt-10 h-full relative">
+                    
+                    <div class="flex justify-between items-start border-b-2 border-brand-dark pb-4 mb-6">
                         <div>
-                            <span class="font-bold text-brand-dark">Invoice #:</span> 
-                            <span id="invoice-number" contenteditable="true" class="editable">001</span>
+                            <h1 class="text-4xl font-bold text-brand-dark tracking-tighter">We<span class="text-brand-light">Reelit</span></h1>
+                            <p class="text-xs text-brand-main font-semibold tracking-wide mt-1">Professional Video Editing & Services</p>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex justify-between mb-8">
-                <div class="w-1/2 pr-4">
-                    <h3 class="text-[11px] font-bold text-brand-main uppercase tracking-widest mb-2">Bill To</h3>
-                    <div contenteditable="true" class="editable text-brand-black text-sm leading-relaxed font-medium">
-                        [Client Name]<br>
-                        [Client Company]<br>
-                        [Client Email/Phone]
-                    </div>
-                </div>
-                <div class="w-1/2 text-right pl-4">
-                    <h3 class="text-[11px] font-bold text-brand-main uppercase tracking-widest mb-2">Pay To</h3>
-                    <p class="text-brand-black text-sm leading-relaxed font-medium">
-                        <span class="font-bold text-brand-dark">WeReelit</span><br>
-                        +91 79089 13742<br>
-                        Freelance Video Editor
-                    </p>
-                </div>
-            </div>
-
-            <table class="w-full mb-6">
-                <thead>
-                    <tr class="bg-brand-dark text-brand-text text-left text-[11px] uppercase tracking-wider">
-                        <th class="py-3 px-5 w-3/4 font-semibold">Description</th>
-                        <th class="py-3 px-5 text-right w-1/4 font-semibold">Amount (INR)</th>
-                    </tr>
-                </thead>
-                <tbody class="text-brand-black text-sm">
-                    <tr class="border-b border-gray-100">
-                        <td class="py-5 px-5 align-top">
-                            <span contenteditable="true" class="editable font-bold text-brand-darker block text-base mb-3">Video Editing Service</span>
-                            
-                            <div class="text-gray-600 text-xs space-y-2">
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Project:</span>
-                                    <span contenteditable="true" class="editable">Corporate Highlight Reel</span>
+                        <div class="text-right">
+                            <h2 class="text-2xl font-bold text-gray-400 uppercase tracking-widest" id="out-header-type">INVOICE</h2>
+                            <div class="text-sm text-brand-darker mt-1 flex flex-col items-end gap-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-brand-dark">Date:</span> 
+                                    <span id="out-date" class="min-w-[80px] text-right">Oct 24, 2025</span>
                                 </div>
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Package:</span>
-                                    <span contenteditable="true" class="editable">[Bronze/Silver/Gold]</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Duration:</span>
-                                    <span contenteditable="true" class="editable">~60 Seconds</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Video Count:</span>
-                                    <span contenteditable="true" class="editable">1</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Revisions:</span>
-                                    <span contenteditable="true" class="editable">2 Rounds Included</span>
-                                </div>
-                                <div class="flex gap-2">
-                                    <span class="font-bold w-24 flex-shrink-0">Rush/Add-on:</span>
-                                    <span contenteditable="true" class="editable">N/A</span>
+                                <div>
+                                    <span class="font-bold text-brand-dark">Invoice #:</span> 
+                                    <span id="out-no">001</span>
                                 </div>
                             </div>
-                        </td>
-                        <td class="py-5 px-5 text-right font-bold align-top text-brand-dark text-base" contenteditable="true">₹1200</td>
-                    </tr>
-                </tbody>
-            </table>
+                        </div>
+                    </div>
 
-            <div class="flex justify-end">
-                <div class="w-1/2">
-                    <div class="flex justify-between py-2 px-5 border-b border-gray-100 text-sm">
-                        <span class="text-gray-600">Total Amount</span>
-                        <span class="font-bold text-brand-black" contenteditable="true">₹1200</span>
+                    <div class="flex justify-between mb-8">
+                        <div class="w-1/2 pr-4">
+                            <h3 class="text-[11px] font-bold text-brand-main uppercase tracking-widest mb-2">Bill To</h3>
+                            <div class="text-brand-black text-sm leading-relaxed font-medium">
+                                <span id="out-client-name" class="block font-bold text-gray-400 italic">[Client Name]</span>
+                                <span id="out-client-co" class="block text-gray-400 italic">[Client Company]</span>
+                                <span id="out-client-contact" class="block text-gray-400 italic">[Client Email/Phone]</span>
+                            </div>
+                        </div>
+                        <div class="w-1/2 text-right pl-4">
+                            <h3 class="text-[11px] font-bold text-brand-main uppercase tracking-widest mb-2">Pay To</h3>
+                            <p class="text-brand-black text-sm leading-relaxed font-medium">
+                                <span class="font-bold text-brand-dark">WeReelit</span><br>
+                                <span id="out-payto-phone">+91 79089 13742</span><br>
+                                Freelance Video Editor
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex justify-between py-2 px-5 border-b border-gray-100 bg-green-50 text-sm">
-                        <span class="text-brand-main font-medium">Less: Advance (30%)</span>
-                        <span class="font-bold text-brand-main" contenteditable="true">- ₹360</span>
-                    </div>
-                    <div class="flex justify-between py-3 px-5 bg-brand-dark text-brand-text mt-2 rounded-sm shadow-sm">
-                        <span class="font-bold uppercase text-sm self-center">Balance Due</span>
-                        <span class="font-bold text-lg" contenteditable="true">₹840</span>
+
+                    <table class="w-full mb-6">
+                        <thead>
+                            <tr class="bg-brand-dark text-brand-text text-left text-[11px] uppercase tracking-wider">
+                                <th class="py-3 px-5 w-3/4 font-semibold">Description</th>
+                                <th class="py-3 px-5 text-right w-1/4 font-semibold">Amount (INR)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-brand-black text-sm">
+                            <tr class="border-b border-gray-100">
+                                <td class="py-5 px-5 align-top">
+                                    <span id="out-style" class="font-bold text-brand-darker block text-base mb-3">Video Editing Service</span>
+                                    
+                                    <div class="text-gray-600 text-xs space-y-2">
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Project:</span>
+                                            <span id="out-project">Corporate Highlight Reel</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Package:</span>
+                                            <span id="out-package">[Bronze/Silver/Gold]</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Duration:</span>
+                                            <span id="out-duration">~60 Seconds</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Video Count:</span>
+                                            <span id="out-vid-count">1</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Revisions:</span>
+                                            <span id="out-revisions">2 Rounds Included</span>
+                                        </div>
+                                        <div class="flex gap-2">
+                                            <span class="font-bold w-24 flex-shrink-0">Rush/Add-on:</span>
+                                            <span id="out-addon">N/A</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-5 px-5 text-right font-bold align-top text-brand-dark text-base">
+                                    <span id="out-item-total">₹1200</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="flex justify-end">
+                        <div class="w-1/2">
+                            <div class="flex justify-between py-2 px-5 border-b border-gray-100 text-sm">
+                                <span class="text-gray-600">Total Amount</span>
+                                <span id="out-subtotal" class="font-bold text-brand-black">₹1200</span>
+                            </div>
+
+                            <div id="row-advance-deduction" class="flex justify-between py-2 px-5 border-b border-gray-100 bg-green-50 text-sm">
+                                <span class="text-brand-main font-medium" id="lbl-advance-desc">Less: Advance (30%)</span>
+                                <span id="out-advance-amt" class="font-bold text-brand-main">- ₹360</span>
+                            </div>
+
+                            <div class="flex justify-between py-3 px-5 bg-brand-dark text-brand-text mt-2 rounded-sm shadow-sm">
+                                <span class="font-bold uppercase text-sm self-center" id="lbl-total-due">Balance Due</span>
+                                <span class="font-bold text-lg" id="out-grand-total">₹840</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                <div class="footer-section absolute bottom-0 w-full px-8 pb-10 pt-5 border-t border-gray-200 bg-brand-white">
+                    <div class="grid grid-cols-2 gap-10">
+                        <div>
+                            <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Payment Details</h3>
+                            <p class="text-sm text-brand-darker mb-2">
+                                <strong class="mr-1 text-brand-black">UPI Holder:</strong> <span class="font-medium">M SUBHAM</span>
+                            </p>
+                            <p class="text-sm text-brand-darker mb-2">
+                                <strong class="mr-1 text-brand-black">UPI ID:</strong> <span id="out-upi-id" class="font-medium">9933264878@axl</span>
+                            </p>
+                            <p class="text-sm text-brand-darker">
+                                <strong class="mr-1 text-brand-black">GPay/PhonePe:</strong> +91 99332 64878
+                            </p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Terms & Conditions</h3>
+                            <ul class="text-[13px] text-gray-600 leading-snug list-disc pl-4 marker:text-brand-light space-y-1">
+                                <li id="term-1">Secure Payment: 30% advance required to begin.</li>
+                                <li>Rapid Turnaround: First draft within 24-48 hours.</li>
+                                <li>Final Delivery: Watermark removed on full payment.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-        </div>
-
-        <div class="footer-section absolute bottom-0 w-full px-8 pb-10 pt-5 border-t border-gray-200 bg-brand-white">
-            <div class="grid grid-cols-2 gap-10">
-                <div>
-                    <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Payment Details</h3>
-                    <p class="text-sm text-brand-darker mb-2">
-                        <strong class="mr-1 text-brand-black">UPI Holder:</strong> <span contenteditable="true" class="editable font-medium">M SUBHAM</span>
-                    </p>
-                    <p class="text-sm text-brand-darker mb-2">
-                        <strong class="mr-1 text-brand-black">UPI ID:</strong> <span contenteditable="true" class="editable font-medium">9933264878@axl</span>
-                    </p>
-                    <p class="text-sm text-brand-darker">
-                        <strong class="mr-1 text-brand-black">GPay/PhonePe:</strong> +91 99332 64878
-                    </p>
-                </div>
-                <div>
-                    <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Terms & Conditions</h3>
-                    <ul class="text-[13px] text-gray-600 leading-snug list-disc pl-4 marker:text-brand-light space-y-1">
-                        <li><strong>Secure Payment:</strong> 30% advance required to begin.</li>
-                        <li><strong>Rapid Turnaround:</strong> First draft within 24-48 hours.</li>
-                        <li><strong>Final Delivery:</strong> Watermark removed on full payment.</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <div class="fixed bottom-8 right-8 no-print flex flex-col gap-3">
-        <button onclick="saveAsPDF()" class="bg-brand-dark text-brand-text px-6 py-3 rounded-full hover:bg-brand-light hover:text-brand-dark transition-all font-bold shadow-lg flex items-center justify-center gap-2">
-            <i class="fas fa-file-pdf"></i> Save as PDF
-        </button>
-        <button onclick="downloadAsImage()" class="bg-brand-main text-white px-6 py-3 rounded-full hover:bg-brand-light hover:text-brand-dark transition-all font-bold shadow-lg flex items-center justify-center gap-2">
-            <i class="fas fa-image"></i> Save as Image
-        </button>
+        </main>
     </div>
 
     <script>
+        // Data for WeReelit Packages
+        const packages = {
+            "Basic": { price: 800, duration: "20 - 30 Sec", revisions: "1 Correction" },
+            "Simple": { price: 1000, duration: "30 - 40 Sec", revisions: "2 Corrections" },
+            "Intermediate": { price: 1200, duration: "40 - 50 Sec", revisions: "3 Corrections" },
+            "Advance": { price: 1500, duration: "50s - 1 Min", revisions: "4 Corrections" },
+            "Custom": { price: 0, duration: "", revisions: "" }
+        };
+
+        // Format Currency
+        const formatINR = (number) => {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number);
+        };
+
+        // Set default date to today
+        document.getElementById('inp-date').valueAsDate = new Date();
+
+        // 1. Function to Auto-Fill Inputs based on Package Selection
+        function applyPackageDefaults() {
+            const selectedPkg = document.getElementById('inp-package').value;
+            
+            if (packages[selectedPkg] && selectedPkg !== 'Custom') {
+                document.getElementById('inp-total').value = packages[selectedPkg].price;
+                document.getElementById('inp-duration').value = packages[selectedPkg].duration;
+                document.getElementById('inp-revisions').value = packages[selectedPkg].revisions;
+            } else if (selectedPkg === 'Custom') {
+                // If custom, clear fields or leave them alone (optional)
+                document.getElementById('inp-total').value = '';
+                document.getElementById('inp-duration').value = '';
+                document.getElementById('inp-revisions').value = '';
+            }
+            updateInvoice();
+        }
+
+        // 2. Main Update Function
+        function updateInvoice() {
+            // Get Values
+            const mode = document.getElementById('inp-mode').value;
+            const invoiceNo = document.getElementById('inp-no').value;
+            const dateStr = document.getElementById('inp-date').value;
+            
+            const clientNameVal = document.getElementById('inp-client-name').value;
+            const clientCoVal = document.getElementById('inp-client-co').value;
+            const clientContactVal = document.getElementById('inp-client-contact').value;
+            
+            const style = document.getElementById('inp-style').value;
+            const project = document.getElementById('inp-project').value;
+            const packageTxt = document.getElementById('inp-package').value;
+            const duration = document.getElementById('inp-duration').value;
+            
+            const vidCount = document.getElementById('inp-vid-count').value;
+            const revisions = document.getElementById('inp-revisions').value;
+            const addon = document.getElementById('inp-addon').value;
+
+            const payToPhone = document.getElementById('inp-payto-phone').value;
+            const upiId = document.getElementById('inp-upi-id').value;
+
+            const totalAmount = parseFloat(document.getElementById('inp-total').value) || 0;
+            const advancePercent = parseFloat(document.getElementById('inp-adv-percent').value) || 0;
+            
+            // Calculations
+            const advanceAmount = Math.round(totalAmount * (advancePercent / 100));
+            const balanceAmount = totalAmount - advanceAmount;
+
+            // Update DOM
+            const dateObj = new Date(dateStr);
+            const formattedDate = dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+
+            document.getElementById('out-no').innerText = invoiceNo;
+            document.getElementById('out-date').innerText = formattedDate;
+
+            // Client Display Logic
+            const elName = document.getElementById('out-client-name');
+            const elCo = document.getElementById('out-client-co');
+            const elContact = document.getElementById('out-client-contact');
+
+            if(clientNameVal) { elName.innerText = clientNameVal; elName.className = "block font-bold"; } 
+            else { elName.innerText = "[Client Name]"; elName.className = "block font-bold text-gray-400 italic"; }
+
+            if(clientCoVal) { elCo.innerText = clientCoVal; elCo.className = "block"; } 
+            else { elCo.innerText = "[Client Company]"; elCo.className = "block text-gray-400 italic"; }
+
+            if(clientContactVal) { elContact.innerText = clientContactVal; elContact.className = "block text-gray-600"; } 
+            else { elContact.innerText = "[Client Email/Phone]"; elContact.className = "block text-gray-400 italic"; }
+            
+            document.getElementById('out-style').innerText = style;
+            document.getElementById('out-project').innerText = project;
+            document.getElementById('out-package').innerText = packageTxt === 'Custom' ? 'Custom Package' : packageTxt + ' Package';
+            document.getElementById('out-duration').innerText = duration;
+            document.getElementById('out-vid-count').innerText = vidCount;
+            document.getElementById('out-revisions').innerText = revisions;
+            document.getElementById('out-addon').innerText = addon;
+            
+            document.getElementById('out-payto-phone').innerText = payToPhone;
+            document.getElementById('out-upi-id').innerText = upiId;
+
+            document.getElementById('out-item-total').innerText = formatINR(totalAmount);
+            document.getElementById('out-subtotal').innerText = formatINR(totalAmount);
+
+            // Invoice Type Logic
+            const advanceRow = document.getElementById('row-advance-deduction');
+            const advanceDescLabel = document.getElementById('lbl-advance-desc');
+            const totalDueLabel = document.getElementById('lbl-total-due');
+            const headerType = document.getElementById('out-header-type');
+
+            if (mode === 'advance') {
+                headerType.innerText = "ADVANCE INVOICE";
+                advanceRow.style.display = 'none'; 
+                totalDueLabel.innerText = `Advance Due (${advancePercent}%)`;
+                document.getElementById('out-grand-total').innerText = formatINR(advanceAmount);
+                document.getElementById('term-1').innerHTML = `<strong>Secure Payment:</strong> This ${advancePercent}% advance is required to begin work.`;
+
+            } else {
+                headerType.innerText = "INVOICE";
+                advanceRow.style.display = 'flex'; 
+                advanceDescLabel.innerText = `Less: Advance (${advancePercent}%)`;
+                document.getElementById('out-advance-amt').innerText = "- " + formatINR(advanceAmount);
+                totalDueLabel.innerText = "Balance Due";
+                document.getElementById('out-grand-total').innerText = formatINR(balanceAmount);
+                document.getElementById('term-1').innerHTML = `<strong>Secure Payment:</strong> ${advancePercent}% advance required to begin.`;
+            }
+        }
+
+        // Initialize on load
+        updateInvoice();
+
+        // ------------------------------------------
+        // Download Functions
+        // ------------------------------------------
         function getInvoiceFilename() {
-            const invoiceNo = document.getElementById('invoice-number').innerText.trim();
-            return `WeReelit Invoice ${invoiceNo}`;
+            const client = document.getElementById('inp-client-name').value || 'Client';
+            const mode = document.getElementById('inp-mode').value === 'advance' ? 'Advance' : 'Final';
+            return `WeReelit_${mode}_Invoice_${client.replace(/\s+/g, '_')}`;
         }
 
         function saveAsPDF() {
@@ -245,7 +553,7 @@
         function downloadAsImage() {
             const element = document.getElementById('invoice-capture');
             const filename = getInvoiceFilename() + ".png";
-
+            element.style.boxShadow = 'none';
             html2canvas(element, {
                 scale: 2, 
                 useCORS: true,
@@ -255,6 +563,7 @@
                 windowWidth: 794,
                 windowHeight: 1123
             }).then(canvas => {
+                element.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
                 const link = document.createElement('a');
                 link.download = filename;
                 link.href = canvas.toDataURL("image/png");
@@ -262,6 +571,5 @@
             });
         }
     </script>
-
 </body>
 </html>
