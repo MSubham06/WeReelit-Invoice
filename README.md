@@ -25,3 +25,25 @@ colors: {
         gray: '#f3f4f6'
     }
 }
+```
+
+
+## Now Updating Invoice with Advance Features
+
+### Key Changes Made:
+
+Split Interface: The screen is now divided.
+
+Left Side: A control panel/form to input details.
+
+Right Side: The live preview of the invoice.
+
+Invoice Type Selector: Added a dropdown to switch between "Advance Payment" and "Final Payment".
+
+Advance Mode: Calculates the specific advance amount (e.g., 30%) and highlights that as the payable amount.
+
+Final Mode: Shows the Total, subtracts the Advance already paid, and shows the Balance Due.
+
+Real-time Updates: As you type in the form, the invoice updates instantly.
+
+Auto-Calculation: You only need to enter the "Total Amount" and "Advance %". The code automatically calculates the math for INR amounts.
