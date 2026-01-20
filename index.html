@@ -37,46 +37,18 @@
         /* ----------------------------------------------------
            PRINT STYLES
            ---------------------------------------------------- */
-        @page { 
-            size: A4; 
-            margin: 0; 
-        }
+        @page { size: A4; margin: 0; }
         @media print {
-            html, body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0 !important;
-                padding: 0 !important;
-                overflow: hidden;
-            }
-            body * { 
-                visibility: hidden; 
-            }
-            #invoice-capture, #invoice-capture * { 
-                visibility: visible; 
-            }
-            #print-area {
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 210mm;
-                height: 297mm;
-                margin: 0; 
-                padding: 0;
-            }
+            html, body { width: 210mm; height: 297mm; margin: 0 !important; padding: 0 !important; overflow: hidden; }
+            body * { visibility: hidden; }
+            #invoice-capture, #invoice-capture * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 210mm; height: 297mm; margin: 0; padding: 0; }
             #invoice-capture { 
-                transform: scale(1) !important; 
-                margin: 0 !important;
-                box-shadow: none !important;
-                width: 100% !important;
-                height: 100% !important;
-                border: none !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
+                transform: scale(1) !important; margin: 0 !important; box-shadow: none !important;
+                width: 100% !important; height: 100% !important; border: none !important;
+                -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
             }
-            .no-print, .resizer, #sidebar, #preview-anchor { 
-                display: none !important; 
-            }
+            .no-print, .resizer, #sidebar, #preview-anchor { display: none !important; }
         }
 
         /* APP STYLES */
@@ -84,11 +56,31 @@
         
         .form-group { margin-bottom: 0.75rem; }
         .form-label { display: block; font-size: 0.75rem; color: #a3a3a3; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase; }
+        
+        /* INPUT STYLING */
         .form-input { 
             width: 100%; background: #333; border: 1px solid #404040; color: white; padding: 0.7rem; 
             border-radius: 6px; font-size: 0.95rem;
+            color-scheme: dark; 
         }
         .form-input:focus { border-color: #72CFA6; outline: none; }
+
+        /* CUSTOM SPINNER FIX (Number Inputs) */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            filter: invert(1); /* Makes arrows white on dark bg */
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        input[type="number"]::-webkit-inner-spin-button:hover { opacity: 1; }
+
+        /* Custom Green Calendar Icon */
+        ::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(0.8) sepia(1) saturate(3) hue-rotate(80deg); 
+            opacity: 0.8;
+        }
+        ::-webkit-calendar-picker-indicator:hover { opacity: 1; }
 
         select.form-input {
             appearance: none;
@@ -114,28 +106,17 @@
 
         /* A4 CONTAINER */
         .a4-container {
-            width: 210mm; 
-            height: 297mm; 
-            background: white; 
-            position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
-            transform-origin: top center; 
-            margin-bottom: 20px;
-            overflow: hidden; 
+            width: 210mm; height: 297mm; background: white; position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); transform-origin: top center; 
+            margin-bottom: 20px; overflow: hidden; 
         }
 
-        /* RESIZER HANDLE */
+        /* RESIZER */
         .resizer {
-            width: 8px;
-            cursor: col-resize;
-            background-color: #333;
-            border-left: 1px solid #444;
-            border-right: 1px solid #222;
-            transition: background-color 0.2s;
-            z-index: 30;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 8px; cursor: col-resize; background-color: #333;
+            border-left: 1px solid #444; border-right: 1px solid #222;
+            transition: background-color 0.2s; z-index: 30; display: flex;
+            align-items: center; justify-content: center;
         }
         .resizer:hover, .resizer.resizing { background-color: #72CFA6; }
         .resizer-icon { width: 4px; height: 30px; border-left: 1px solid #666; border-right: 1px solid #666; }
@@ -150,8 +131,8 @@
     <div class="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden">
         
         <aside id="sidebar" class="w-full lg:w-[450px] bg-[#262626] border-b lg:border-b-0 lg:border-r border-[#333] flex-shrink-0 z-20 h-auto lg:h-full lg:overflow-y-auto relative no-print">
-            
             <div class="p-6 pb-12">
+                
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <h2 class="text-xl font-bold text-white mb-1">Invoice Generator</h2>
@@ -171,9 +152,20 @@
                     </select>
                 </div>
 
-                <div class="form-group flex items-center gap-3 bg-gray-800 p-3 rounded border border-gray-700">
-                    <input type="checkbox" id="inp-paid-status" onchange="updateInvoice()" class="w-5 h-5 accent-brand-main cursor-pointer">
-                    <label for="inp-paid-status" class="text-white text-sm font-bold cursor-pointer select-none">Mark as PAID</label>
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div class="form-group flex items-center gap-2 bg-gray-800 p-2 rounded border border-gray-700">
+                        <input type="checkbox" id="inp-paid-status" onchange="updateInvoice()" class="w-4 h-4 accent-brand-main cursor-pointer">
+                        <label for="inp-paid-status" class="text-white text-xs font-bold cursor-pointer select-none">Mark PAID</label>
+                    </div>
+                    <div class="form-group flex items-center gap-2 bg-gray-800 p-2 rounded border border-gray-700">
+                        <input type="checkbox" id="inp-custom-toggle" onchange="toggleCustomField()" class="w-4 h-4 accent-brand-main cursor-pointer">
+                        <label for="inp-custom-toggle" class="text-white text-xs font-bold cursor-pointer select-none">Add Note</label>
+                    </div>
+                </div>
+
+                <div id="custom-design-box" class="form-group hidden">
+                    <label class="form-label text-brand-light">Custom Design Details / Note</label>
+                    <textarea id="inp-custom-note" rows="2" class="form-input" placeholder="Enter custom details here..." oninput="updateInvoice()"></textarea>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3 mt-4">
@@ -299,13 +291,37 @@
                 </div>
 
                 <div class="section-title">Payment Info</div>
-                <div class="form-group">
-                    <label class="form-label">Pay To Phone</label>
-                    <input type="text" id="inp-payto-phone" class="form-input" value="+91 79089 13742" oninput="updateInvoice()">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">UPI ID</label>
-                    <input type="text" id="inp-upi-id" class="form-input" value="9933264878@axl" oninput="updateInvoice()">
+                
+                <div class="space-y-4">
+                    
+                    <div class="form-group bg-[#2a2a2a] p-3 rounded border border-[#444]">
+                        <label class="form-label text-brand-light mb-2">UPI DETAILS</label>
+                        
+                        <div class="flex items-center gap-2 mb-2">
+                            <input type="checkbox" id="inp-show-name" checked onchange="updateInvoice()" class="w-4 h-4 accent-brand-main cursor-pointer flex-shrink-0">
+                            <div class="flex-grow">
+                                <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">Account Name</label>
+                                <input type="text" id="inp-upi-name" class="form-input py-1 text-sm" value="M SUBHAM" oninput="updateInvoice()">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="inp-show-id" checked onchange="updateInvoice()" class="w-4 h-4 accent-brand-main cursor-pointer flex-shrink-0">
+                            <div class="flex-grow">
+                                <label class="text-[10px] text-gray-400 uppercase font-bold block mb-1">UPI ID</label>
+                                <input type="text" id="inp-upi-id" class="form-input py-1 text-sm" placeholder="user@bank" oninput="updateInvoice()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group bg-[#2a2a2a] p-3 rounded border border-[#444]">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="form-label text-brand-light mb-0">GPAY / PHONEPE</label>
+                            <input type="checkbox" id="inp-show-phone" checked onchange="updateInvoice()" class="w-4 h-4 accent-brand-main cursor-pointer">
+                        </div>
+                        <input type="text" id="inp-payto-phone" class="form-input" placeholder="+91 00000 00000" oninput="updateInvoice()">
+                    </div>
+
                 </div>
 
                 <div class="mt-8 flex flex-col gap-3">
@@ -366,7 +382,7 @@
                                 <h3 class="text-[11px] font-bold text-brand-main uppercase tracking-widest mb-2">Pay To</h3>
                                 <p class="text-brand-black text-sm leading-relaxed font-medium">
                                     <span class="font-bold text-brand-dark">WeReelit</span><br>
-                                    <span id="out-payto-phone"></span><br>
+                                    <span>+91 79089 13742</span><br>
                                     Freelance Video Editor
                                 </p>
                             </div>
@@ -383,7 +399,6 @@
                                 <tr class="border-b border-gray-100">
                                     <td class="py-5 px-5 align-top">
                                         <span id="out-style" class="font-bold text-brand-darker block text-base mb-3"></span>
-                                        
                                         <div class="text-gray-600 text-xs space-y-2">
                                             <div class="flex gap-2">
                                                 <span class="font-bold w-24 flex-shrink-0">Project:</span>
@@ -409,6 +424,10 @@
                                                 <span class="font-bold w-24 flex-shrink-0">Rush/Add-on:</span>
                                                 <span id="out-addon"></span>
                                             </div>
+                                            <div id="out-custom-note-row" class="hidden mt-3 pt-2 border-t border-dashed border-gray-200">
+                                                <span class="font-bold w-full block mb-1 text-brand-main">Note:</span>
+                                                <span id="out-custom-note-text" class="italic text-gray-500"></span>
+                                            </div>
                                         </div>
                                     </td>
                                     <td class="py-5 px-5 text-right font-bold align-top text-brand-dark text-base">
@@ -433,12 +452,10 @@
                                     <span class="text-gray-600">Total Amount</span>
                                     <span id="out-total-amount" class="font-bold text-brand-black"></span>
                                 </div>
-
                                 <div id="row-advance-deduction" class="flex justify-between py-2 px-5 border-b border-gray-100 bg-green-50 text-sm">
                                     <span class="text-brand-main font-medium" id="lbl-advance-desc">Less: Advance (30%)</span>
                                     <span id="out-advance-amt" class="font-bold text-brand-main"></span>
                                 </div>
-
                                 <div class="flex justify-between py-3 px-5 bg-brand-dark text-brand-text mt-2 rounded-sm shadow-sm">
                                     <span class="font-bold uppercase text-sm self-center" id="lbl-total-due">Balance Due</span>
                                     <span class="font-bold text-lg" id="out-grand-total"></span>
@@ -451,14 +468,17 @@
                         <div class="grid grid-cols-2 gap-10">
                             <div>
                                 <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Payment Details</h3>
-                                <p class="text-sm text-brand-darker mb-2">
-                                    <strong class="mr-1 text-brand-black">UPI Holder:</strong> <span class="font-medium">M SUBHAM</span>
+                                
+                                <p id="row-upi-name" class="text-sm text-brand-darker mb-2">
+                                    <strong class="mr-1 text-brand-black">UPI Holder:</strong> <span id="out-upi-name" class="font-medium"></span>
                                 </p>
-                                <p class="text-sm text-brand-darker mb-2">
+                                
+                                <p id="row-upi-id" class="text-sm text-brand-darker mb-2">
                                     <strong class="mr-1 text-brand-black">UPI ID:</strong> <span id="out-upi-id" class="font-medium"></span>
                                 </p>
-                                <p class="text-sm text-brand-darker">
-                                    <strong class="mr-1 text-brand-black">GPay/PhonePe:</strong> +91 99332 64878
+                                
+                                <p id="row-phone" class="text-sm text-brand-darker">
+                                    <strong class="mr-1 text-brand-black">GPay/PhonePe:</strong> <span id="out-footer-phone"></span>
                                 </p>
                             </div>
                             <div>
@@ -486,16 +506,11 @@
     </div>
 
     <script>
-        // ----------------------------------------------------
-        // RESIZABLE SIDEBAR LOGIC (Desktop)
-        // ----------------------------------------------------
+        // SIDEBAR RESIZER
         document.addEventListener('DOMContentLoaded', function() {
             const resizer = document.getElementById('dragMe');
             const leftSide = document.getElementById('sidebar');
-
-            let x = 0;
-            let leftWidth = 0;
-
+            let x = 0; let leftWidth = 0;
             const mouseDownHandler = function(e) {
                 x = e.clientX;
                 leftWidth = leftSide.getBoundingClientRect().width;
@@ -504,7 +519,6 @@
                 document.addEventListener('mousemove', mouseMoveHandler);
                 document.addEventListener('mouseup', mouseUpHandler);
             };
-
             const mouseMoveHandler = function(e) {
                 const dx = e.clientX - x;
                 const newWidth = leftWidth + dx;
@@ -513,28 +527,22 @@
                     adjustPreviewScale();
                 }
             };
-
             const mouseUpHandler = function() {
                 resizer.classList.remove('resizing');
                 document.body.style.removeProperty('cursor');
                 document.removeEventListener('mousemove', mouseMoveHandler);
                 document.removeEventListener('mouseup', mouseUpHandler);
             };
-
             resizer.addEventListener('mousedown', mouseDownHandler);
         });
 
-        // ----------------------------------------------------
-        // RESPONSIVE SCALING LOGIC
-        // ----------------------------------------------------
+        // SCALING
         function adjustPreviewScale() {
             const previewContainer = document.getElementById('preview-container');
             const invoice = document.getElementById('invoice-capture');
             const containerWidth = previewContainer.clientWidth;
-            
             const a4Width = 794; 
             const padding = 32; 
-
             if (containerWidth < (a4Width + padding)) {
                 const scale = (containerWidth - padding) / a4Width;
                 invoice.style.transform = `scale(${scale})`;
@@ -545,13 +553,10 @@
                 invoice.style.marginBottom = '20px';
             }
         }
-
         window.addEventListener('load', adjustPreviewScale);
         window.addEventListener('resize', adjustPreviewScale);
 
-        // ----------------------------------------------------
         // INVOICE LOGIC
-        // ----------------------------------------------------
         const packages = {
             "Basic": { price: 800, duration: "20 - 30 Sec", revisions: "1 Correction" },
             "Simple": { price: 1000, duration: "30 - 40 Sec", revisions: "2 Corrections" },
@@ -559,7 +564,6 @@
             "Advance": { price: 1500, duration: "50s - 1 Min", revisions: "4 Corrections" },
             "Custom": { price: 0, duration: "", revisions: "None" }
         };
-
         const formatINR = (number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(number);
 
         document.getElementById('inp-date').valueAsDate = new Date();
@@ -576,25 +580,33 @@
             updateInvoice();
         }
 
+        // TOGGLE CUSTOM NOTE
+        function toggleCustomField() {
+            const chk = document.getElementById('inp-custom-toggle');
+            const box = document.getElementById('custom-design-box');
+            if(chk.checked) {
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+                document.getElementById('inp-custom-note').value = ""; // Clear on hide
+            }
+            updateInvoice();
+        }
+
         function applyPackageDefaults() {
             const pkg = document.getElementById('inp-package').value;
             const count = parseFloat(document.getElementById('inp-vid-count').value) || 1;
-
             if (packages[pkg] && pkg !== 'Custom') {
                 const unitPrice = packages[pkg].price;
                 const totalPrice = unitPrice * count; 
-                
                 document.getElementById('inp-base-price').value = totalPrice;
                 document.getElementById('inp-duration').value = packages[pkg].duration;
-                
-                const revSelect = document.getElementById('inp-revisions');
-                revSelect.value = packages[pkg].revisions;
+                document.getElementById('inp-revisions').value = packages[pkg].revisions;
             } 
             updateInvoice();
         }
 
         function updateInvoice() {
-            // Inputs
             const mode = document.getElementById('inp-mode').value;
             const paidStatus = document.getElementById('inp-paid-status').checked;
             
@@ -611,10 +623,19 @@
             const vidCount = document.getElementById('inp-vid-count').value;
             const revisions = document.getElementById('inp-revisions').value;
             
-            // Addon
             const addonSelect = document.getElementById('inp-addon-select').value;
             const addonCustom = document.getElementById('inp-addon-custom').value;
             const finalAddon = (addonSelect === 'custom') ? (addonCustom || 'Custom') : addonSelect;
+
+            // Payment Inputs
+            const showName = document.getElementById('inp-show-name').checked;
+            const upiName = document.getElementById('inp-upi-name').value;
+            
+            const showID = document.getElementById('inp-show-id').checked;
+            const upiVal = document.getElementById('inp-upi-id').value;
+            
+            const showPhone = document.getElementById('inp-show-phone').checked;
+            const phoneVal = document.getElementById('inp-payto-phone').value;
 
             // Financials
             const basePrice = parseFloat(document.getElementById('inp-base-price').value) || 0;
@@ -626,7 +647,11 @@
             const advanceAmt = Math.round(basePrice * (advPercent / 100));
             const balanceAmt = totalAmount - advanceAmt;
 
-            // DOM Updates
+            // Custom Note
+            const customNoteText = document.getElementById('inp-custom-note').value;
+            const customNoteToggle = document.getElementById('inp-custom-toggle').checked;
+
+            // Render
             document.getElementById('out-no').innerText = document.getElementById('inp-no').value;
             const d = new Date(document.getElementById('inp-date').value);
             document.getElementById('out-date').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -634,13 +659,10 @@
             const elName = document.getElementById('out-client-name');
             const elCo = document.getElementById('out-client-co');
             const elContact = document.getElementById('out-client-contact');
-
             elName.innerText = clientName || "[Client Name]";
             elName.className = clientName ? "block font-bold" : "block font-bold text-gray-400 italic";
-            
             elCo.innerText = clientCo || "[Client Company]";
             elCo.className = clientCo ? "block" : "block text-gray-400 italic";
-            
             elContact.innerText = clientContact || "[Client Email/Phone]";
             elContact.className = clientContact ? "block text-gray-600" : "block text-gray-400 italic";
 
@@ -652,8 +674,42 @@
             document.getElementById('out-revisions').innerText = revisions;
             document.getElementById('out-addon').innerText = finalAddon;
 
-            document.getElementById('out-payto-phone').innerText = document.getElementById('inp-payto-phone').value;
-            document.getElementById('out-upi-id').innerText = document.getElementById('inp-upi-id').value;
+            // Custom Note Render
+            const noteRow = document.getElementById('out-custom-note-row');
+            if(customNoteToggle && customNoteText.trim() !== "") {
+                noteRow.classList.remove('hidden');
+                document.getElementById('out-custom-note-text').innerText = customNoteText;
+            } else {
+                noteRow.classList.add('hidden');
+            }
+
+            // --- PAYMENT LOGIC ---
+            // Name Line
+            const rowName = document.getElementById('row-upi-name');
+            if (showName) {
+                rowName.style.display = 'block';
+                document.getElementById('out-upi-name').innerText = upiName;
+            } else {
+                rowName.style.display = 'none';
+            }
+
+            // ID Line
+            const rowID = document.getElementById('row-upi-id');
+            if (showID) {
+                rowID.style.display = 'block';
+                document.getElementById('out-upi-id').innerText = upiVal;
+            } else {
+                rowID.style.display = 'none';
+            }
+
+            // Phone Line
+            const rowPhone = document.getElementById('row-phone');
+            if (showPhone) {
+                rowPhone.style.display = 'block';
+                document.getElementById('out-footer-phone').innerText = phoneVal;
+            } else {
+                rowPhone.style.display = 'none';
+            }
 
             document.getElementById('out-base-price').innerText = formatINR(basePrice);
             
@@ -669,7 +725,6 @@
             document.getElementById('out-total-amount').innerText = formatINR(totalAmount);
             document.getElementById('sidebar-total-display').innerText = formatINR(totalAmount); 
 
-            // Invoice Type Logic
             const advRow = document.getElementById('row-advance-deduction');
             const headerType = document.getElementById('out-header-type');
             const totalDueLabel = document.getElementById('lbl-total-due');
@@ -691,27 +746,20 @@
                 term1.innerHTML = `<strong>Secure Payment:</strong> ${advPercent}% advance required to begin.`;
             }
 
-            // Green PAID Stamp
             const stamp = document.getElementById('stamp-paid');
             stamp.style.display = paidStatus ? 'block' : 'none';
         }
 
-        // Initialize
         updateInvoice();
         adjustPreviewScale(); 
 
-        // ----------------------------------------------------
-        // FILENAME GENERATOR WITH ID
-        // ----------------------------------------------------
+        // FILES
         function getInvoiceFilename() {
             const invoiceNo = document.getElementById('inp-no').value || '000';
             const client = document.getElementById('inp-client-name').value || 'Client';
             const mode = document.getElementById('inp-mode').value === 'advance' ? 'Advance' : 'Final';
-            
-            // Clean up strings to be filename safe
             const cleanClient = client.replace(/[^a-zA-Z0-9]/g, '_');
             const cleanNo = invoiceNo.replace(/[^a-zA-Z0-9]/g, '-');
-            
             return `WeReelit_Invoice_${cleanNo}_${cleanClient}_${mode}`;
         }
 
@@ -725,19 +773,16 @@
         function downloadAsImage() {
             const element = document.getElementById('invoice-capture');
             const filename = getInvoiceFilename() + ".png";
-            
             const originalTransform = element.style.transform;
             const originalMargin = element.style.margin;
             element.style.transform = 'scale(1)';
             element.style.boxShadow = 'none';
-
             html2canvas(element, {
                 scale: 2, useCORS: true, backgroundColor: "#ffffff",
                 width: 794, height: 1123, windowWidth: 794, windowHeight: 1123
             }).then(canvas => {
                 element.style.transform = originalTransform;
                 element.style.boxShadow = '0 0 20px rgba(0,0,0,0.5)';
-                
                 const link = document.createElement('a');
                 link.download = filename;
                 link.href = canvas.toDataURL("image/png");
