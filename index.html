@@ -34,30 +34,59 @@
         }
     </script>
     <style>
-        /* PRINT STYLES */
-        @page { size: A4; margin: 0; }
+        /* ----------------------------------------------------
+           PRINT STYLES
+           ---------------------------------------------------- */
+        @page { 
+            size: A4; 
+            margin: 0; 
+        }
         @media print {
-            body * { visibility: hidden; }
-            #invoice-capture, #invoice-capture * { visibility: visible; }
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden;
+            }
+            body * { 
+                visibility: hidden; 
+            }
+            #invoice-capture, #invoice-capture * { 
+                visibility: visible; 
+            }
             #print-area {
-                position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0;
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 210mm;
+                height: 297mm;
+                margin: 0; 
+                padding: 0;
             }
             #invoice-capture { 
                 transform: scale(1) !important; 
-                margin: 0 auto;
-                box-shadow: none;
+                margin: 0 !important;
+                box-shadow: none !important;
+                width: 100% !important;
+                height: 100% !important;
+                border: none !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
-            .no-print { display: none !important; }
+            .no-print, .resizer, #sidebar, #preview-anchor { 
+                display: none !important; 
+            }
         }
 
         /* APP STYLES */
         body { background-color: #1a1a1a; }
         
         .form-group { margin-bottom: 0.75rem; }
-        .form-label { display: block; font-size: 0.7rem; color: #a3a3a3; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase; }
+        .form-label { display: block; font-size: 0.75rem; color: #a3a3a3; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase; }
         .form-input { 
-            width: 100%; background: #333; border: 1px solid #404040; color: white; padding: 0.6rem; 
-            border-radius: 6px; font-size: 0.9rem;
+            width: 100%; background: #333; border: 1px solid #404040; color: white; padding: 0.7rem; 
+            border-radius: 6px; font-size: 0.95rem;
         }
         .form-input:focus { border-color: #72CFA6; outline: none; }
 
@@ -72,36 +101,44 @@
             margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #404040; padding-bottom: 0.25rem;
         }
 
-        /* PAID STAMP - GREEN */
+        /* PAID STAMP */
         .paid-stamp {
-            display: none;
-            position: absolute;
-            top: 40%; left: 50%;
+            display: none; position: absolute; top: 40%; left: 50%;
             transform: translate(-50%, -50%) rotate(-15deg);
-            color: #16a34a; /* Green-600 */
-            border: 4px solid #16a34a;
-            font-size: 4rem;
-            font-weight: 800;
-            padding: 0.5rem 1rem;
-            text-transform: uppercase;
-            opacity: 0.7;
-            z-index: 50;
-            pointer-events: none;
-            border-radius: 8px;
-            letter-spacing: 0.1em;
+            color: #16a34a; border: 4px solid #16a34a;
+            font-size: 4rem; font-weight: 800; padding: 0.5rem 1rem;
+            text-transform: uppercase; opacity: 0.7; z-index: 50;
+            pointer-events: none; border-radius: 8px; letter-spacing: 0.1em;
             mix-blend-mode: multiply;
         }
 
         /* A4 CONTAINER */
         .a4-container {
             width: 210mm; 
-            min-height: 297mm;
-            background: white;
+            height: 297mm; 
+            background: white; 
             position: relative;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); 
             transform-origin: top center; 
             margin-bottom: 20px;
+            overflow: hidden; 
         }
+
+        /* RESIZER HANDLE */
+        .resizer {
+            width: 8px;
+            cursor: col-resize;
+            background-color: #333;
+            border-left: 1px solid #444;
+            border-right: 1px solid #222;
+            transition: background-color 0.2s;
+            z-index: 30;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .resizer:hover, .resizer.resizing { background-color: #72CFA6; }
+        .resizer-icon { width: 4px; height: 30px; border-left: 1px solid #666; border-right: 1px solid #666; }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1a1a1a; }
@@ -110,17 +147,21 @@
 </head>
 <body class="font-sans text-brand-black">
 
-    <div class="flex flex-col lg:flex-row h-screen overflow-hidden">
+    <div class="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden">
         
-        <aside class="w-full lg:w-[450px] bg-[#262626] overflow-y-auto border-r border-[#333] flex-shrink-0 z-20 h-full">
-            <div class="p-6 pb-20 lg:pb-6">
-                
+        <aside id="sidebar" class="w-full lg:w-[450px] bg-[#262626] border-b lg:border-b-0 lg:border-r border-[#333] flex-shrink-0 z-20 h-auto lg:h-full lg:overflow-y-auto relative no-print">
+            
+            <div class="p-6 pb-12">
                 <div class="flex justify-between items-start mb-6">
                     <div>
                         <h2 class="text-xl font-bold text-white mb-1">Invoice Generator</h2>
                         <p class="text-xs text-brand-light">WeReelit Pricing & Plans</p>
                     </div>
                 </div>
+
+                <a href="#preview-anchor" class="lg:hidden block w-full text-center bg-gray-700 text-brand-light font-bold py-2 rounded mb-6 border border-gray-600">
+                    ⬇ Jump to Preview
+                </a>
 
                 <div class="form-group">
                     <label class="form-label text-brand-light">Invoice Mode</label>
@@ -275,13 +316,17 @@
                         <i class="fas fa-file-pdf"></i> Save as PDF
                     </button>
                 </div>
-                
-                <div class="h-20 lg:hidden"></div>
             </div>
         </aside>
 
-        <main id="preview-container" class="flex-grow bg-[#525252] overflow-y-auto lg:overflow-y-auto overflow-x-hidden flex justify-center p-4 lg:p-8">
+        <div id="dragMe" class="resizer hidden lg:flex no-print">
+            <div class="resizer-icon"></div>
+        </div>
+
+        <main id="preview-container" class="flex-grow bg-[#525252] overflow-visible lg:overflow-y-auto overflow-x-hidden flex justify-center p-4 lg:p-8 h-auto lg:h-full">
             <div id="print-area">
+                <div id="preview-anchor" class="h-2 lg:hidden"></div>
+
                 <div id="invoice-capture" class="a4-container">
                     
                     <div id="stamp-paid" class="paid-stamp">PAID</div>
@@ -418,11 +463,20 @@
                             </div>
                             <div>
                                 <h3 class="text-sm font-bold text-brand-dark mb-3 uppercase tracking-wider">Terms & Conditions</h3>
-                                <ul class="text-[13px] text-gray-600 leading-snug list-disc pl-4 marker:text-brand-light space-y-1">
-                                    <li id="term-1">Secure Payment: 30% advance required to begin.</li>
-                                    <li>Rapid Turnaround: First draft within 24-48 hours.</li>
-                                    <li>Final Delivery: Watermark removed on full payment.</li>
-                                </ul>
+                                <div class="text-[13px] text-gray-600 leading-snug space-y-1 mt-1">
+                                    <div class="flex items-start">
+                                        <span class="mr-2 text-brand-light font-bold">•</span>
+                                        <span id="term-1">Secure Payment: 30% advance required to begin.</span>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="mr-2 text-brand-light font-bold">•</span>
+                                        <span>Rapid Turnaround: First draft within 24-48 hours.</span>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <span class="mr-2 text-brand-light font-bold">•</span>
+                                        <span>Final Delivery: Watermark removed on full payment.</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -432,6 +486,44 @@
     </div>
 
     <script>
+        // ----------------------------------------------------
+        // RESIZABLE SIDEBAR LOGIC (Desktop)
+        // ----------------------------------------------------
+        document.addEventListener('DOMContentLoaded', function() {
+            const resizer = document.getElementById('dragMe');
+            const leftSide = document.getElementById('sidebar');
+
+            let x = 0;
+            let leftWidth = 0;
+
+            const mouseDownHandler = function(e) {
+                x = e.clientX;
+                leftWidth = leftSide.getBoundingClientRect().width;
+                resizer.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                document.addEventListener('mousemove', mouseMoveHandler);
+                document.addEventListener('mouseup', mouseUpHandler);
+            };
+
+            const mouseMoveHandler = function(e) {
+                const dx = e.clientX - x;
+                const newWidth = leftWidth + dx;
+                if (newWidth > 300 && newWidth < Math.min(800, window.innerWidth * 0.7)) {
+                    leftSide.style.width = `${newWidth}px`;
+                    adjustPreviewScale();
+                }
+            };
+
+            const mouseUpHandler = function() {
+                resizer.classList.remove('resizing');
+                document.body.style.removeProperty('cursor');
+                document.removeEventListener('mousemove', mouseMoveHandler);
+                document.removeEventListener('mouseup', mouseUpHandler);
+            };
+
+            resizer.addEventListener('mousedown', mouseDownHandler);
+        });
+
         // ----------------------------------------------------
         // RESPONSIVE SCALING LOGIC
         // ----------------------------------------------------
@@ -456,7 +548,6 @@
 
         window.addEventListener('load', adjustPreviewScale);
         window.addEventListener('resize', adjustPreviewScale);
-
 
         // ----------------------------------------------------
         // INVOICE LOGIC
@@ -485,14 +576,13 @@
             updateInvoice();
         }
 
-        // Logic to multiply Unit Price * Video Count
         function applyPackageDefaults() {
             const pkg = document.getElementById('inp-package').value;
             const count = parseFloat(document.getElementById('inp-vid-count').value) || 1;
 
             if (packages[pkg] && pkg !== 'Custom') {
                 const unitPrice = packages[pkg].price;
-                const totalPrice = unitPrice * count; // MULTIPLY HERE
+                const totalPrice = unitPrice * count; 
                 
                 document.getElementById('inp-base-price').value = totalPrice;
                 document.getElementById('inp-duration').value = packages[pkg].duration;
@@ -533,10 +623,7 @@
             const advPercent = parseFloat(document.getElementById('inp-adv-percent').value) || 0;
 
             const totalAmount = basePrice + extraAmount;
-            
-            // ADVANCE CALCULATION: Only on Base Price
             const advanceAmt = Math.round(basePrice * (advPercent / 100));
-            
             const balanceAmt = totalAmount - advanceAmt;
 
             // DOM Updates
@@ -613,11 +700,19 @@
         updateInvoice();
         adjustPreviewScale(); 
 
-        // Download
+        // ----------------------------------------------------
+        // FILENAME GENERATOR WITH ID
+        // ----------------------------------------------------
         function getInvoiceFilename() {
+            const invoiceNo = document.getElementById('inp-no').value || '000';
             const client = document.getElementById('inp-client-name').value || 'Client';
             const mode = document.getElementById('inp-mode').value === 'advance' ? 'Advance' : 'Final';
-            return `WeReelit_${mode}_Invoice_${client.replace(/\s+/g, '_')}`;
+            
+            // Clean up strings to be filename safe
+            const cleanClient = client.replace(/[^a-zA-Z0-9]/g, '_');
+            const cleanNo = invoiceNo.replace(/[^a-zA-Z0-9]/g, '-');
+            
+            return `WeReelit_Invoice_${cleanNo}_${cleanClient}_${mode}`;
         }
 
         function saveAsPDF() {
